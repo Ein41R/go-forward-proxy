@@ -35,7 +35,7 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 	case http.MethodConnect:
 		handleConnect(w, r)
 	default:
-		w.WriteHeader(http.StatusInternalServerError)
+		handleAny(w, r)
 	}
 }
 
@@ -88,4 +88,8 @@ func pipe(src io.Writer, dst io.Reader) {
 	if err != nil {
 		log.Printf("Error occurred while piping data: %v", err)
 	}
+}
+
+func handleAny(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
 }
