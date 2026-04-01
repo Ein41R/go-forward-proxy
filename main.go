@@ -16,12 +16,12 @@ import (
 func main() {
 	host := "127.0.0.1"
 	port := "1234"
-	mux := http.NewServeMux()
+	// mux := http.NewServeMux()
 
-	mux.HandleFunc("/", handleFunc)
+	// mux.HandleFunc("/", handleFunc)
 
 	log.Printf("Server started at %s:%s\n", host, port)
-	err := http.ListenAndServe(host+":"+port, mux)
+	err := http.ListenAndServe(host+":"+port, http.HandlerFunc(handleFunc))
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleConnect(w http.ResponseWriter, r *http.Request) {
+func handleConnect(w http.ResponseWriter, r *http.Request) { //test using curl -x http://127.0.0.1:1234 https://google.com
 	var wg sync.WaitGroup
 
 	// 1-2 	client connects to proxy over tcp, need to hijcak connection to handle CONNECT method
@@ -55,6 +55,7 @@ func handleConnect(w http.ResponseWriter, r *http.Request) {
 	bufrw.Flush()             // flush any buffered data to client
 	defer client_conn.Close() // close connection once function exits
 	// 3 	client sends CONNECT <host> HTTP/1.1
+	log.Printf("Outgoing CONNECT request for %s\n", r.Host)
 
 	// todo: 4 proxy checks Access control list and blocks connection if neccessary
 
@@ -65,9 +66,15 @@ func handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer host_conn.Close() // close connection once function exits
+	log.Printf("TCP connection to %s established\n", r.Host)
 
 	// 6 	proxy responds with HTTP/1.1 200 Connection established
-	w.WriteHeader(http.StatusOK)
+	_, err = client_conn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+	if err != nil {
+		return
+	}
+
+	log.Printf("%v -> %v", client_conn.LocalAddr(), host_conn.RemoteAddr())
 
 	// 7 	proxy enters pipe mode
 	wg.Go(func() { pipe(client_conn, host_conn) })
@@ -76,7 +83,8 @@ func handleConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 func pipe(src io.Writer, dst io.Reader) {
-	_, err := io.Copy(src, dst)
+	written, err := io.Copy(src, dst)
+	log.Printf("Piped %d bytes", written)
 	if err != nil {
 		log.Printf("Error occurred while piping data: %v", err)
 	}
