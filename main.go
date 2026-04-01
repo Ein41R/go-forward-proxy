@@ -2,8 +2,13 @@ package main
 
 import (
 	// "io"
+
+	"io"
 	"log"
+	"net"
 	"net/http"
+	"sync"
+	"time"
 	// "https://github.com/pmezard/adblock"
 	// "os"
 )
@@ -26,7 +31,7 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request: %s %s\n", r.Method, r.URL.Path)
 	switch r.Method {
 	case http.MethodGet:
-		w.WriteHeader(http.StatusOK)
+		handleGet(w, r)
 	case http.MethodConnect:
 		handleConnect(w, r)
 	default:
@@ -34,6 +39,45 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleConnect(w http.ResponseWriter, r *http.Request) {
+func handleGet(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
 
+func handleConnect(w http.ResponseWriter, r *http.Request) {
+	var wg sync.WaitGroup
+
+	// 1-2 	client connects to proxy over tcp, need to hijcak connection to handle CONNECT method
+	client_conn, bufrw, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	bufrw.Flush()             // flush any buffered data to client
+	defer client_conn.Close() // close connection once function exits
+	// 3 	client sends CONNECT <host> HTTP/1.1
+
+	// todo: 4 proxy checks Access control list and blocks connection if neccessary
+
+	// 5 	proxy connects to host via tcp
+	host_conn, err := net.DialTimeout("tcp", r.Host, 3*time.Second) //timeouts after 3 seconds
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+		return
+	}
+	defer host_conn.Close() // close connection once function exits
+
+	// 6 	proxy responds with HTTP/1.1 200 Connection established
+	w.WriteHeader(http.StatusOK)
+
+	// 7 	proxy enters pipe mode
+	wg.Go(func() { pipe(client_conn, host_conn) })
+	wg.Go(func() { pipe(host_conn, client_conn) })
+	wg.Wait() // wait for both goroutines to finish
+}
+
+func pipe(src io.Writer, dst io.Reader) {
+	_, err := io.Copy(src, dst)
+	if err != nil {
+		log.Printf("Error occurred while piping data: %v", err)
+	}
 }
