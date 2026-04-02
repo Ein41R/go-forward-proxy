@@ -13,6 +13,19 @@ import (
 	// "os"
 )
 
+// TODO: parse from config.json
+var perHopHeaders = []string{
+	"Proxy-Connection",
+	"Proxy-Authenticate",
+	"Proxy-Authorization",
+	"Connection",
+	"Keep-Alive",
+	"TE",
+	"Trailer",
+	"Transfer-Encoding",
+	"Upgrade",
+}
+
 func main() {
 	host := "127.0.0.1"
 	port := "1234"
@@ -40,7 +53,7 @@ func handleFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGet(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+	handleAny(w, r)
 }
 
 func handleConnect(w http.ResponseWriter, r *http.Request) { //test using curl -x http://127.0.0.1:1234 https://google.com
@@ -91,5 +104,39 @@ func pipe(src io.Writer, dst io.Reader) {
 }
 
 func handleAny(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+	// strip per hop headers
+
+	for _, h := range perHopHeaders {
+		r.Header.Del(h)
+	}
+
+	headers := make(map[string]string)
+	for key, values := range r.Header {
+		headers[key] = values[0]
+	}
+
+	response := MakeRequest(r.URL.String(), r.Method, headers)
+	// log.Printf("Response from %s: %s\n", r.URL.String(), response)
+	w.Write([]byte(response))
+}
+
+func MakeRequest(URL string, method string, headers map[string]string) string {
+	log.Printf("Making %s request", method)
+	client := &http.Client{}
+	req, _ := http.NewRequest(method, URL, nil)
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.Println("Err is", err)
+	}
+	defer res.Body.Close()
+
+	resBody, _ := io.ReadAll(res.Body)
+	response := string(resBody)
+
+	return response
 }
