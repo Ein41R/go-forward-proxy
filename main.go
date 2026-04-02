@@ -121,7 +121,7 @@ func handleAny(w http.ResponseWriter, r *http.Request) {
 }
 
 func MakeRequest(URL string, method string, headers map[string]string) string {
-	log.Printf("Making %s request", method)
+	log.Printf("Making %s request\n", method)
 	client := &http.Client{}
 	req, _ := http.NewRequest(method, URL, nil)
 
@@ -138,5 +138,6 @@ func MakeRequest(URL string, method string, headers map[string]string) string {
 	resBody, _ := io.ReadAll(res.Body)
 	response := string(resBody)
 
+	log.Println("Request successfuly made to", URL)
 	return response
 }
