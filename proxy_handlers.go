@@ -47,17 +47,18 @@ func handleConnect(w http.ResponseWriter, r *http.Request) { //test using curl -
 	log.Printf("%v -> %v", client_conn.LocalAddr(), host_conn.RemoteAddr())
 
 	// 7 	proxy enters pipe mode
-	wg.Go(func() { pipe(client_conn, host_conn) })
-	wg.Go(func() { pipe(host_conn, client_conn) })
+	wg.Go(func() { pipe(client_conn, host_conn, "to host") })
+	wg.Go(func() { pipe(host_conn, client_conn, "to client") })
 	wg.Wait() // wait for both goroutines to finish
 }
 
-func pipe(src io.Writer, dst io.Reader) {
+func pipe(src io.Writer, dst io.Reader, direction string) {
 	written, err := io.Copy(src, dst)
-	log.Printf("Piped %d bytes", written)
+
 	if err != nil {
 		log.Printf("Error occurred while piping data: %v", err)
 	}
+	log.Printf("Piped %d bytes %s", written, direction)
 }
 
 func handleAny(w http.ResponseWriter, r *http.Request) {

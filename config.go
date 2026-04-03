@@ -25,4 +25,5 @@ func loadConfig() (map[string]interface{}, error) {
 	}
 
 	fmt.Print(data) //TODO implement later
+	return nil, nil
 }
