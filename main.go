@@ -31,7 +31,7 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 	config, ok := ctx.Value(cfgInterfaceKey).(Config)
-	//type assertion since ctx.Value returns interface
+	//type assertion since ctx.Value returns interface{}
 	//using private typed key for typesafety
 	if !ok {
 		log.Fatal("Failed to load config")
