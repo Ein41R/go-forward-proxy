@@ -1,16 +1,14 @@
 package main
 
 import (
-	// "io"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
-	// "https://github.com/pmezard/adblock"
-	// "os"
 )
 
-// TODO: parse from config.json
+// WARNING: incomplete list of hop-by-hop headers
+// which will be stripped
 var perHopHeaders = []string{
 	"Proxy-Connection",
 	"Proxy-Authenticate",
@@ -24,24 +22,19 @@ var perHopHeaders = []string{
 }
 
 func main() {
-	//context with config values
 	ctx := context.Background()
 	ctx, err := loadConfig(ctx)
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
+	//EXPLINATION: ctx.Value returns interface, which we assert the Config type
 	config, ok := ctx.Value(cfgInterfaceKey).(Config)
-	//type assertion since ctx.Value returns interface{}
-	//using private typed key for typesafety
 	if !ok {
 		log.Fatal("Failed to load config")
 	}
 
 	host := config.Host
 	port := config.Port
-	// mux := http.NewServeMux()
-
-	// mux.HandleFunc("/", handleFunc)
 
 	log.Printf("Server started at %s:%d\n", host, port)
 	err = http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), http.HandlerFunc(handleFunc))

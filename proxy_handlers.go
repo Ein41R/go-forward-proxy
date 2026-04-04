@@ -13,32 +13,33 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	handleAny(w, r)
 }
 
-func handleConnect(w http.ResponseWriter, r *http.Request) { //test using curl -x http://127.0.0.1:1234 https://google.com
+// NOTE: use curl -x http://127.0.0.1:1234 <url> to test
+func handleConnect(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 
-	// 1-2 	client connects to proxy over tcp, need to hijcak connection to handle CONNECT method
+	//EXPLINATION: hijacking the connection to handle the CONNECT method
 	client_conn, bufrw, err := w.(http.Hijacker).Hijack()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	bufrw.Flush()             // flush any buffered data to client
-	defer client_conn.Close() // close connection once function exits
-	// 3 	client sends CONNECT <host> HTTP/1.1
+	bufrw.Flush()
+	defer client_conn.Close()
+
 	log.Printf("Outgoing CONNECT request for %s\n", r.Host)
 
-	// todo: 4 proxy checks Access control list and blocks connection if neccessary
+	// TODO: implement ACL blocking here
 
-	// 5 	proxy connects to host via tcp
-	host_conn, err := net.DialTimeout("tcp", r.Host, 3*time.Second) //timeouts after 3 seconds
+	// EXPLINATION: establish TCP connection to the target host
+	host_conn, err := net.DialTimeout("tcp", r.Host, 3*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	defer host_conn.Close() // close connection once function exits
+	defer host_conn.Close()
 	log.Printf("TCP connection to %s established\n", r.Host)
 
-	// 6 	proxy responds with HTTP/1.1 200 Connection established
+	//EXPLINATION: send 200 Connection Established response to client
 	_, err = client_conn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
 	if err != nil {
 		return
@@ -46,7 +47,7 @@ func handleConnect(w http.ResponseWriter, r *http.Request) { //test using curl -
 
 	log.Printf("%v -> %v", client_conn.LocalAddr(), host_conn.RemoteAddr())
 
-	// 7 	proxy enters pipe mode
+	//EXPLINATION: start bidirectional piping between client and host
 	wg.Go(func() { pipe(client_conn, host_conn, "to host") })
 	wg.Go(func() { pipe(host_conn, client_conn, "to client") })
 	wg.Wait() // wait for both goroutines to finish

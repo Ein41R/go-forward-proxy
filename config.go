@@ -8,14 +8,15 @@ import (
 
 var configfile = "config.json"
 
-// parse json data into struct
+// EXPLINATION: parsing json file into struct
 type Config struct {
 	Host    string `json:"host"`
 	Port    int    `json:"port"`
 	TimeOut int    `json:"timeout"`
 }
 
-// private type to avoid key collisions in context
+// WARNING:  type cfgKey is a private type
+// to avoid key collision, preserves typesaftey
 type cfgKey string
 
 const cfgInterfaceKey cfgKey = "cfg_interface"
@@ -34,9 +35,6 @@ func loadConfig(ctx context.Context) (context.Context, error) {
 	}
 
 	ctx = context.WithValue(ctx, cfgInterfaceKey, data)
-	// cfg := (*ctx).Value("cfg_interface").(Config).Host
-
-	// log.Printf("Config loaded: %+v\n", reflect.TypeOf(cfg))
 
 	return ctx, nil
 }
