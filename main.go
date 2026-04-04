@@ -26,8 +26,14 @@ var perHopHeaders = []string{
 func main() {
 	//context with config values
 	ctx := context.Background()
-	loadConfig(&ctx)
-	config := ctx.Value("cfg_interface").(Config) //type assertion since ctx.Value returns interface
+	ctx, err := loadConfig(ctx)
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+	config, ok := ctx.Value("cfg_interface").(Config) //type assertion since ctx.Value returns interface
+	if !ok {
+		log.Fatal("Failed to load config")
+	}
 
 	host := config.Host
 	port := config.Port

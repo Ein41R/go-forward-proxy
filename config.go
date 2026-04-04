@@ -14,7 +14,7 @@ type Config struct {
 	TimeOut int    `json:"timeout"`
 }
 
-func loadConfig(ctx *context.Context) (map[string]interface{}, error) {
+func loadConfig(ctx context.Context) (context.Context, error) {
 	var data Config
 
 	jsonData, err := os.ReadFile(configfile)
@@ -27,10 +27,10 @@ func loadConfig(ctx *context.Context) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	*ctx = context.WithValue(*ctx, "cfg_interface", data)
+	ctx = context.WithValue(ctx, "cfg_interface", data)
 	// cfg := (*ctx).Value("cfg_interface").(Config).Host
 
 	// log.Printf("Config loaded: %+v\n", reflect.TypeOf(cfg))
 
-	return nil, nil
+	return ctx, nil
 }
