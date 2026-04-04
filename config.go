@@ -14,6 +14,11 @@ type Config struct {
 	TimeOut int    `json:"timeout"`
 }
 
+// private type to avoid key collisions in context
+type cfgKey string
+
+const cfgInterfaceKey cfgKey = "cfg_interface"
+
 func loadConfig(ctx context.Context) (context.Context, error) {
 	var data Config
 
@@ -27,7 +32,7 @@ func loadConfig(ctx context.Context) (context.Context, error) {
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, "cfg_interface", data)
+	ctx = context.WithValue(ctx, cfgInterfaceKey, data)
 	// cfg := (*ctx).Value("cfg_interface").(Config).Host
 
 	// log.Printf("Config loaded: %+v\n", reflect.TypeOf(cfg))

@@ -30,7 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-	config, ok := ctx.Value("cfg_interface").(Config) //type assertion since ctx.Value returns interface
+	config, ok := ctx.Value(cfgInterfaceKey).(Config) //type assertion since ctx.Value returns interface
 	if !ok {
 		log.Fatal("Failed to load config")
 	}
@@ -42,7 +42,7 @@ func main() {
 	// mux.HandleFunc("/", handleFunc)
 
 	log.Printf("Server started at %s:%d\n", host, port)
-	err := http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), http.HandlerFunc(handleFunc))
+	err = http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), http.HandlerFunc(handleFunc))
 	if err != nil {
 		panic(err)
 	}
