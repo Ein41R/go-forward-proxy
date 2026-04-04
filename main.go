@@ -2,7 +2,8 @@ package main
 
 import (
 	// "io"
-
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	// "https://github.com/pmezard/adblock"
@@ -23,14 +24,19 @@ var perHopHeaders = []string{
 }
 
 func main() {
-	host := "127.0.0.1"
-	port := "1234"
+	//context with config values
+	ctx := context.Background()
+	loadConfig(&ctx)
+	config := ctx.Value("cfg_interface").(Config) //type assertion since ctx.Value returns interface
+
+	host := config.Host
+	port := config.Port
 	// mux := http.NewServeMux()
 
 	// mux.HandleFunc("/", handleFunc)
 
-	log.Printf("Server started at %s:%s\n", host, port)
-	err := http.ListenAndServe(host+":"+port, http.HandlerFunc(handleFunc))
+	log.Printf("Server started at %s:%d\n", host, port)
+	err := http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), http.HandlerFunc(handleFunc))
 	if err != nil {
 		panic(err)
 	}

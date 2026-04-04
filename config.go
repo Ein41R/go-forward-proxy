@@ -1,17 +1,20 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
 var configfile = "config.json"
 
 type Config struct {
+	Host    string `json:"host"`
+	Port    int    `json:"port"`
+	TimeOut int    `json:"timeout"`
 }
 
-func loadConfig() (map[string]interface{}, error) {
+func loadConfig(ctx *context.Context) (map[string]interface{}, error) {
 	var data Config
 
 	jsonData, err := os.ReadFile(configfile)
@@ -24,6 +27,10 @@ func loadConfig() (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Print(data) //TODO implement later
+	*ctx = context.WithValue(*ctx, "cfg_interface", data)
+	// cfg := (*ctx).Value("cfg_interface").(Config).Host
+
+	// log.Printf("Config loaded: %+v\n", reflect.TypeOf(cfg))
+
 	return nil, nil
 }
