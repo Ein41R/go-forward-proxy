@@ -8,6 +8,7 @@ import (
 
 var configfile = "config.json"
 
+// parse json data into struct
 type Config struct {
 	Host    string `json:"host"`
 	Port    int    `json:"port"`
